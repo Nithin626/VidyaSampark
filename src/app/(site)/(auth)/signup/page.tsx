@@ -12,7 +12,9 @@ const SignupPage = () => {
     <>
       <Breadcrumb pageName="Sign Up Page" />
 
-      <SignUp />
+      <SignUp onClose={function (): void {
+        throw new Error("Function not implemented.");
+      } } />
     </>
   );
 };

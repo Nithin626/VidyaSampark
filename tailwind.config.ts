@@ -33,6 +33,8 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'), // <-- This is the new line
+  ],
 };
 export default config;

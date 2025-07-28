@@ -1,86 +1,119 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { HeaderItem } from "../../../../types/menu";
+import { HeaderItem } from "@/types/menu";
 import { usePathname } from "next/navigation";
+import { supabase } from "@/utils/supabaseClient";
 
 const HeaderLink: React.FC<{ item: HeaderItem }> = ({ item }) => {
   const [submenuOpen, setSubmenuOpen] = useState(false);
-  const path = usePathname(); // Get the current path from Next.js router
+  const path = usePathname();
   const [isActive, setIsActive] = useState(false);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [colleges, setColleges] = useState<any[]>([]);
 
-  // Check if the current path matches the link or any submenu link
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
-    const isLinkActive = (path === item.href || (item.submenu && item.submenu.some(subItem => path === subItem.href))) ?? false;
-    setIsActive(isLinkActive); // Ensure isLinkActive is always a boolean
+    const isLinkActive =
+      path === item.href || item.submenu?.some((sub) => path === sub.href);
+    setIsActive(Boolean(isLinkActive));
   }, [path, item.href, item.submenu]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      if (item.label === "Courses") {
+        const { data, error } = await supabase.from("courses").select("id, name");
+        if (!error && data) setCourses(data);
+      } else if (item.label === "Colleges") {
+        const { data, error } = await supabase.from("universities").select("id, name");
+        if (!error && data) setColleges(data);
+      }
+    };
+    fetchData();
+  }, [item.label]);
+
   const handleMouseEnter = () => {
-    if (item.submenu) {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (item.label === "Courses" || item.label === "Colleges") {
       setSubmenuOpen(true);
     }
   };
 
   const handleMouseLeave = () => {
-    setSubmenuOpen(false);
+    timeoutRef.current = setTimeout(() => {
+      setSubmenuOpen(false);
+    }, 200);
+  };
+
+  const renderMegaDropdown = () => {
+    const items = item.label === "Courses" ? courses : colleges;
+    const basePath = item.label === "Courses" ? "/courses" : "/colleges";
+
+    return (
+      <div
+        className="absolute left-0 mt-2 p-4 bg-white shadow-lg rounded-lg z-50 w-[600px] grid grid-cols-2 gap-4"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {items.slice(0, 10).map((entry) => (
+          <Link
+            key={entry.id}
+            href={`${basePath}/${entry.id}`}
+            className="text-gray-700 hover:text-blue-600 block"
+          >
+            {entry.name}
+          </Link>
+        ))}
+        <Link
+          href={basePath}
+          className="col-span-2 text-blue-600 font-semibold mt-2 block hover:underline"
+        >
+          View All {item.label} →
+        </Link>
+      </div>
+    );
   };
 
   return (
     <div
-      className="relative"
+      className="relative group"
+      ref={wrapperRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <Link
-        href={`/${item.href}`}
-        className={`text-lg flex hover:text-black capitalized relative ${isActive
-            ? "text-black after:absolute after:w-8 after:h-1 after:bg-primary after:rounded-full after:-bottom-1"
-            : "text-grey"
+      <div className="cursor-pointer">
+        <Link
+          href={item.href}
+          className={`text-lg flex items-center gap-1 hover:text-black relative ${
+            isActive
+              ? "text-black after:absolute after:w-8 after:h-1 after:bg-primary after:rounded-full after:-bottom-1"
+              : "text-grey"
           }`}
-      >
-        {item.label}
-        {item.submenu && (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="1.5em"
-            height="1.5em"
-            viewBox="0 0 24 24"
-          >
-            <path
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-              d="m7 10l5 5l5-5"
-            />
-          </svg>
-        )}
-      </Link>
-
-      {submenuOpen && (
-        <div
-          className={`absolute py-2 left-0 mt-0.5 w-60 bg-white dark:bg-darklight dark:text-white shadow-lg rounded-lg `}
-          data-aos="fade-up"
-          data-aos-duration="500"
         >
-          {item.submenu?.map((subItem, index) => {
-            const isSubItemActive = path === subItem.href; // Check if the submenu item is active
-            return (
-              <Link
-                key={index}
-                href={subItem.href}
-                className={`block px-4 py-2 ${isSubItemActive
-                    ? "bg-primary text-white"
-                    : "text-black dark:text-white hover:bg-primary"
-                  }`}
-              >
-                {subItem.label}
-              </Link>
-            );
-          })}
-        </div>
-      )}
+          {item.label}
+          {(item.label === "Courses" || item.label === "Colleges") && (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="1.2em"
+              height="1.2em"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+                d="m7 10l5 5l5-5"
+              />
+            </svg>
+          )}
+        </Link>
+      </div>
+
+      {submenuOpen && renderMegaDropdown()}
     </div>
   );
 };

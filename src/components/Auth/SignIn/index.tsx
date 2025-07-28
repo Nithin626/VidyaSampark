@@ -1,43 +1,36 @@
+//src\components\Auth\SignIn\index.tsx
 "use client";
 import { supabase } from "@/utils/supabaseClient";
-
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import SocialSignIn from "../SocialSignIn";
-import Logo from "@/components/Layout/Header/Logo"
+import Logo from "@/components/Layout/Header/Logo";
 import Loader from "@/components/Common/Loader";
+import { useUI } from "@/context/UIContext"; // --- 1. Import useUI ---
 
 const Signin = ({ onClose }: { onClose: () => void }) => {
   const router = useRouter();
+  const { switchToSignUp } = useUI(); // --- 2. Get the switchToSignUp function ---
 
-  const [loginData, setLoginData] = useState({
-    email: "",
-    password: "",
-    checkboxToggle: false,
-  });
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
   const loginUser = async (e: any) => {
-
     e.preventDefault();
-
     setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: loginData.email,
       password: loginData.password,
     });
 
     if (error) {
-    toast.error(error.message);
-    setLoading(false);
+      toast.error(error.message);
+      setLoading(false);
     } else {
-    toast.success("Login successful");
-    setLoading(false);
-    onClose(); // close modal
-      
-    router.push("/");
+      toast.success("Login successful");
+      setLoading(false);
+      onClose();
+      // No need to push to "/", the page will auto-refresh
     }
   };
 
@@ -46,58 +39,38 @@ const Signin = ({ onClose }: { onClose: () => void }) => {
       <div className="mb-10 text-center mx-auto inline-block max-w-[160px]">
         <Logo />
       </div>
-
-      <SocialSignIn />
-
-      <span className="z-1 relative my-8 block text-center before:content-[''] before:absolute before:h-px before:w-40% before:bg-black/15 before:left-0 before:top-3 after:content-[''] after:absolute after:h-px after:w-40% after:bg-black/15 after:top-3 after:right-0">
-        <span className="text-body-secondary relative z-10 inline-block px-3 text-base text-black">
-          OR
-        </span>
-      </span>
-
-  <form onSubmit={loginUser}>
+      <form onSubmit={loginUser}>
         <div className="mb-[22px]">
           <input
             type="email"
             placeholder="Email"
-            onChange={(e) =>
-              setLoginData({ ...loginData, email: e.target.value })
-            }
-            className="w-full rounded-md border border-black/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition placeholder:text-grey focus:border-primary focus-visible:shadow-none dark:focus:border-primary"
+            onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+            className="w-full rounded-md border border-black/20 bg-transparent px-5 py-3 text-base outline-none focus:border-primary"
           />
         </div>
         <div className="mb-[22px]">
           <input
             type="password"
             placeholder="Password"
-            onChange={(e) =>
-              setLoginData({ ...loginData, password: e.target.value })
-            }
-            className="w-full rounded-md border border-black/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition placeholder:text-grey focus:border-primary focus-visible:shadow-none dark:focus:border-primary"
+            onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+            className="w-full rounded-md border border-black/20 bg-transparent px-5 py-3 text-base outline-none focus:border-primary"
           />
         </div>
         <div className="mb-9">
           <button
-            onClick={loginUser}
             type="submit"
-            className="bg-primary w-full py-3 rounded-lg text-18 font-medium border border-primary hover:text-primary hover:bg-transparent"
+            className="bg-primary w-full py-3 rounded-lg text-lg font-medium border border-primary text-white hover:bg-primary/90"
           >
             Sign In {loading && <Loader />}
           </button>
         </div>
       </form>
-
-      <Link
-        href="/forgot-password"
-        className="mb-2 inline-block text-base text-dark hover:text-primary  dark:hover:text-primary"
-      >
-        Forgot Password?
-      </Link>
       <p className="text-body-secondary text-base">
         Not a member yet?{" "}
-        <Link href="/" className="text-primary hover:underline">
+        {/* --- 3. Use a button that calls switchToSignUp --- */}
+        <button onClick={switchToSignUp} className="pl-2 text-primary hover:underline font-semibold">
           Sign Up
-        </Link>
+        </button>
       </p>
     </>
   );

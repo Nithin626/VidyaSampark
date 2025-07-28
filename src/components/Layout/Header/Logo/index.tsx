@@ -1,21 +1,20 @@
-import { getImagePrefix } from "@/utils/util";
+//src\components\Layout\Header\Logo\index.tsx
 import Image from "next/image";
 import Link from "next/link";
 
 const Logo: React.FC = () => {
   return (
-<Link href="/">
-  <Image
-    src={`${getImagePrefix()}images/logo/logo.png`}
-    alt="logo"
-    width={0}
-    height={0}
-    sizes="(max-width: 768px) 120px, 160px"
-    style={{ width: "160px", height: "auto" }}
-    quality={100}
-  />
-</Link>
-
+    <Link href="/">
+      <Image
+        // FIX: Use a direct absolute path starting with "/"
+        src="/images/logo/logo.png"
+        alt="logo"
+        width={160} // It's better to provide a non-zero width/height
+        height={40} // Adjust this value to your logo's aspect ratio
+        style={{ width: "160px", height: "auto" }}
+        priority // Add priority to the logo as it's likely LCP (Largest Contentful Paint)
+      />
+    </Link>
   );
 };
 

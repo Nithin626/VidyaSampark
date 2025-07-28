@@ -1,0 +1,13 @@
+/* src/components/Home/News/NewsTicker.css */
+@keyframes scroll-y {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%); /* This scrolls exactly one full length of the original list */
+  }
+}
+
+.animate-scroll-y {
+  animation: scroll-y 20s linear infinite; /* Adjust the duration (20s) to be faster or slower */
+}

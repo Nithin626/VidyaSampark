@@ -1,36 +1,72 @@
-import { getImagePrefix } from "@/utils/util";
+//src\components\Home\Newsletter\index.tsx
+"use client";
+
+import { useState } from 'react';
 import Image from "next/image";
+import toast from 'react-hot-toast';
+import { subscribeToNewsletterAction } from '@/app/admin/actions';
 
 const Newsletter = () => {
-    const isProd = process.env.NODE_ENV === "production";
+    const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const result = await subscribeToNewsletterAction(email);
+        
+        if (result.error) {
+            toast.error(result.error);
+        } else {
+            toast.success(result.success!);
+            setEmail('');
+        }
+        setLoading(false);
+    };
 
     return (
-        <section>
-            <div className="container mx-auto lg:max-w-screen-xl md:max-w-screen-md px-4">
-                <div className="grid grid-cols-1 gap-y-10 gap-x-6 md:grid-cols-12 xl:gap-x-8">
-                    <div className={`col-span-12 ${isProd ? 'bg-newsletter-bg-2' : 'bg-newsletter-bg'} bg-contain bg-no-repeat`}>
-                        <div className="mb-10 mt-24 lg:mx-64 lg:my-24">
-                            <h3 className="text-4xl md:text-5xl text-center font-semibold text-white mb-3">Newsletter.</h3>
-                            <h3 className="text-base font-normal text-white/75 text-center mb-8">
-                                Subscrible our newsletter for discounts, <br /> promo and many more.
-                            </h3>
-                            <div>
-                                <div className="relative text-white focus-within:text-white flex flex-row-reverse rounded-full pt-5 lg:pt-0">
-                                    <input type="Email address" name="q" className="py-6 lg:py-8 text-sm md:text-lg w-full mx-3 text-black rounded-full pl-8 focus:outline-none focus:text-black" placeholder="Enter your email address" autoComplete="off" />
-                                    <div className="absolute inset-y-0 right-0 flex items-center pr-6 pt-5 lg:pt-0">
-                                        <button type="submit" className="p-3 lg:p-5 focus:outline-none focus:shadow-outline bg-ultramarine hover:bg-midnightblue duration-150 ease-in-out rounded-full">
-                                            <Image src={`${getImagePrefix()}images/newsletter/send.svg`} alt="send-icon" width={30} height={30} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        <section className="bg-blue-600">
+            <div className="container mx-auto max-w-6xl px-4 py-6">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                    
+                    {/* Text on the left */}
+                    <div className="text-center lg:text-left">
+                        <h3 className="text-2xl font-semibold text-white">Stay Updated</h3>
+                        <p className="text-base text-white/75">Subscribe to our newsletter for the latest news.</p>
                     </div>
 
+                    {/* Form on the right */}
+                    <div className="w-full max-w-md">
+                        <form 
+                            onSubmit={handleSubmit}
+                            className="relative"
+                        >
+                            <input 
+                                type="email" 
+                                name="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="py-3 text-base w-full text-black rounded-full pl-6 pr-20 focus:outline-none focus:ring-2 focus:ring-white" 
+                                placeholder="Enter your email address" 
+                                autoComplete="off"
+                                required
+                            />
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                                <button 
+                                    type="submit" 
+                                    disabled={loading}
+                                    className="p-2 focus:outline-none bg-primary hover:bg-secondary duration-150 ease-in-out rounded-full disabled:bg-gray-400"
+                                    aria-label="Subscribe"
+                                >
+                                    <Image src="/images/newsletter/send.svg" alt="send-icon" width={20} height={20} />
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>
-    )
+    );
 }
 
 export default Newsletter;
