@@ -1,0 +1,33 @@
+/* src/components/Home/LogoCarousel/LogoCarousel.css */
+.logo-carousel-container {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+}
+
+.logo-carousel-track {
+  display: flex;
+  width: fit-content;
+  animation: scroll-x 30s linear infinite; /* Adjust duration for speed */
+}
+
+.logo-carousel-item {
+  flex-shrink: 0;
+  width: 200px; /* Adjust width of each item */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2rem;
+  opacity: 0.8;
+}
+
+@keyframes scroll-x {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%); /* Scrolls one full length of the original list */
+  }
+}

@@ -5,38 +5,51 @@ import Hero from "@/components/Home/Hero";
 import Newsletter from "@/components/Home/Newsletter";
 import AboutUs from "@/components/Home/AboutUs";
 import News from "@/components/Home/News";
-import { supabase } from "@/utils/supabaseClient"; // 1. Import supabase
+import LogoCarousel from "@/components/Home/LogoCarousel"; // 1. Import the new component
+import { supabase } from "@/utils/supabaseClient";
 
-// Define the type for a news item right here for simplicity
+// Define types for the data we're fetching
 interface NewsItem {
   id: string;
   content: string;
   created_at: string;
 }
-
-// 2. Fetch news data on the server
-async function getNews() {
-  const { data, error } = await supabase
-    .from("news")
-    .select("*")
-    .order('created_at', { ascending: false }); // Newest first
-
-  if (error) {
-    console.error("Error fetching news:", error);
-    return [];
-  }
-  return data as NewsItem[];
+interface UniversityLogo {
+  id: string;
+  name: string;
+  logo_url: string | null;
 }
 
-// 3. Convert the component to an async function
+// 2. Create functions to fetch all necessary data
+async function getNews() {
+  const { data } = await supabase
+    .from("news")
+    .select("*")
+    .order('created_at', { ascending: false });
+  return (data as NewsItem[]) || [];
+}
+
+async function getUniversityLogos() {
+  const { data } = await supabase
+    .from("universities")
+    .select("id, name, logo_url")
+    .not('logo_url', 'is', null); // Only fetch universities that have a logo
+  return (data as UniversityLogo[]) || [];
+}
+
 export default async function Home() {
-  const newsItems = await getNews(); // 4. Call the fetch function
+  // 3. Fetch all data in parallel
+  const [newsItems, universityLogos] = await Promise.all([
+    getNews(),
+    getUniversityLogos()
+  ]);
 
   return (
     <main>
       <Hero />
+
+      <LogoCarousel logos={universityLogos} />
       <AboutUs />
-      {/* 5. Pass the fetched data to the News component */}
       <News newsItems={newsItems} />
       <Newsletter />
     </main>

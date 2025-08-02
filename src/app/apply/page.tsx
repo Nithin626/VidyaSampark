@@ -1,11 +1,12 @@
 //src\app\apply\page.tsx
+// src/app/apply/page.tsx
 "use client";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
 import useUser from "@/components/hooks/useUser";
 import Loader from "@/components/Common/Loader";
-import { useUI } from "@/context/UIContext"; // Import the useUI hook
+import { useUI } from "@/context/UIContext";
 import { createEnquiryAction } from "../admin/actions";
 
 // Simple types for the dropdown data
@@ -17,15 +18,16 @@ interface DropdownUniversity {
   id: string;
   name: string;
 }
+// --- ADDED: Type for a single certification course ---
+interface CertificationCourse {
+  id: string;
+  name: string;
+}
 
 export default function ApplyFormPage() {
   const searchParams = useSearchParams();
   const { user, loading: userLoading } = useUser();
-  const { openSignInModal } = useUI(); // Get the function to open the modal from context
-
-  // Get pre-filled data from URL
-  const prefilledCourseName = searchParams.get("course");
-  const prefilledCollegeName = searchParams.get("college");
+  const { openSignInModal } = useUI();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -38,6 +40,9 @@ export default function ApplyFormPage() {
 
   const [courses, setCourses] = useState<DropdownCourse[]>([]);
   const [universities, setUniversities] = useState<DropdownUniversity[]>([]);
+  // --- ADDED: State to hold the pre-filled certification course ---
+  const [certificationCourse, setCertificationCourse] = useState<CertificationCourse | null>(null);
+
   const [loadingData, setLoadingData] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -53,7 +58,9 @@ export default function ApplyFormPage() {
 
       setLoadingData(true);
 
-      // 1. Fetch the logged-in user's profile
+      // --- MODIFIED: The entire data fetching logic is updated ---
+
+      // 1. Fetch the user's profile first (no change here)
       const { data: profileData } = await supabase
         .from("user_profiles")
         .select("name, phone, email, current_class")
@@ -70,40 +77,59 @@ export default function ApplyFormPage() {
         }));
       }
       
-      // 2. Fetch courses and universities with contextual filtering
-      let fetchedUniversities: DropdownUniversity[] = [];
-      let fetchedCourses: DropdownCourse[] = [];
-      
-      const collegeParam = searchParams.get('college');
-      if (collegeParam) {
-          const { data: uniData } = await supabase.from('universities').select('id, name').eq('name', collegeParam).single();
-          if (uniData) {
-              fetchedUniversities = [uniData];
-              setFormData(prev => ({ ...prev, university_id: uniData.id }));
-              
-              const { data: courseMappings } = await supabase
-                .from('university_courses')
-                .select('courses(id, name)')
-                .eq('university_id', uniData.id);
+      // 2. Check for a certification course ID in the URL
+      const certId = searchParams.get('certification_id');
 
-              if (courseMappings) {
-                fetchedCourses = courseMappings.map(m => m.courses).flat().filter(Boolean) as DropdownCourse[];
-              }
-          }
+      if (certId) {
+        // This is a certification application
+        const { data: certCourseData, error } = await supabase
+          .from('certification_courses')
+          .select('id, name')
+          .eq('id', certId)
+          .single();
+        
+        if (certCourseData) {
+          setCertificationCourse(certCourseData);
+        } else {
+          setErrorMsg("Could not find the specified certification course.");
+        }
       } else {
-          const { data: allUnis } = await supabase.from("universities").select("id, name");
-          const { data: allCourses } = await supabase.from("courses").select("id, name");
-          fetchedUniversities = allUnis || [];
-          fetchedCourses = allCourses || [];
-      }
-      
-      setUniversities(fetchedUniversities);
-      setCourses(fetchedCourses);
+        // This is a regular college/course application (existing logic)
+        const collegeParam = searchParams.get('college');
+        let fetchedUniversities: DropdownUniversity[] = [];
+        let fetchedCourses: DropdownCourse[] = [];
+        
+        if (collegeParam) {
+            const { data: uniData } = await supabase.from('universities').select('id, name').eq('name', collegeParam).single();
+            if (uniData) {
+                fetchedUniversities = [uniData];
+                setFormData(prev => ({ ...prev, university_id: uniData.id }));
+                
+                const { data: courseMappings } = await supabase
+                  .from('university_courses')
+                  .select('courses(id, name)')
+                  .eq('university_id', uniData.id);
 
-      if (prefilledCourseName) {
-        const course = fetchedCourses.find(c => c.name === prefilledCourseName);
-        if (course) {
-          setFormData(prev => ({ ...prev, course_id: course.id }));
+                if (courseMappings) {
+                  fetchedCourses = courseMappings.map(m => m.courses).flat().filter(Boolean) as DropdownCourse[];
+                }
+            }
+        } else {
+            const { data: allUnis } = await supabase.from("universities").select("id, name");
+            const { data: allCourses } = await supabase.from("courses").select("id, name");
+            fetchedUniversities = allUnis || [];
+            fetchedCourses = allCourses || [];
+        }
+        
+        setUniversities(fetchedUniversities);
+        setCourses(fetchedCourses);
+
+        const prefilledCourseName = searchParams.get("course");
+        if (prefilledCourseName) {
+            const course = fetchedCourses.find(c => c.name === prefilledCourseName);
+            if (course) {
+              setFormData(prev => ({ ...prev, course_id: course.id }));
+            }
         }
       }
 
@@ -111,48 +137,61 @@ export default function ApplyFormPage() {
     };
 
     initializeForm();
-  }, [user, userLoading, searchParams, prefilledCourseName]);
+  }, [user, userLoading, searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = await createEnquiryAction({ 
+    // --- MODIFIED: Submission logic handles both cases ---
+    let enquiryPayload: any = {
         name: formData.name, 
         phone: formData.phone, 
         email: formData.email, 
         current_class: formData.current_class,
-        course_id: formData.course_id,
-        college_id: formData.university_id,
-        course: courses.find(c => c.id === formData.course_id)?.name,
-        college: universities.find(u => u.id === formData.university_id)?.name
-    });
+    };
+
+    if (certificationCourse) {
+        // Payload for a certification enquiry
+        enquiryPayload.certification_course_id = certificationCourse.id;
+        // Ensure regular course/college IDs are null
+        enquiryPayload.course_id = null;
+        enquiryPayload.college_id = null;
+    } else {
+        // Payload for a regular enquiry
+        if (!formData.university_id || !formData.course_id) {
+            setErrorMsg("Please select both a college and a course.");
+            return;
+        }
+        enquiryPayload.course_id = formData.course_id;
+        enquiryPayload.college_id = formData.university_id;
+        enquiryPayload.course = courses.find(c => c.id === formData.course_id)?.name;
+        enquiryPayload.college = universities.find(u => u.id === formData.university_id)?.name;
+        enquiryPayload.certification_course_id = null;
+    }
+
+    const result = await createEnquiryAction(enquiryPayload);
 
     if (result.error) {
         setErrorMsg(`❌ ${result.error}`);
     } else {
         setSubmitted(true);
+        setErrorMsg("");
     }
-};
+  };
 
   if (userLoading) {
     return <div className="flex justify-center items-center h-screen"><Loader /></div>;
   }
   
-  // Updated UI for logged-out users
   if (!user) {
     return (
         <div className="max-w-xl mx-auto text-center py-20 pt-40">
             <h2 className="text-2xl font-bold mb-4">Please Sign In to Apply</h2>
-            <p className="text-gray-600 mb-6">
-                You need an account to submit an application. Please sign in or create an account to continue.
-            </p>
+            <p className="text-gray-600 mb-6">You need an account to submit an application. Please sign in or create an account to continue.</p>
             <button 
                 onClick={openSignInModal}
                 className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary/90"
@@ -168,7 +207,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       <h1 className="text-3xl font-bold mb-6 text-center">Admission Enquiry Form</h1>
       {submitted ? (
         <div className="bg-green-100 text-green-800 p-4 rounded text-center">
-          ✅ Thank you! Your application has been submitted.
+          ✅ Thank you! Your application has been submitted. Our team will contact you shortly.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6 bg-white shadow-md p-8 rounded-lg">
@@ -190,39 +229,50 @@ const handleSubmit = async (e: React.FormEvent) => {
             <input type="text" value={formData.current_class} readOnly className="w-full border p-2 rounded mt-1 bg-gray-100 cursor-not-allowed" />
           </div>
           <hr/>
-          {/* Dynamic Selections */}
-          <div>
-            <label className="block font-medium">Select College</label>
-            <select
-              name="university_id"
-              required
-              className="w-full border p-2 rounded mt-1 bg-white"
-              onChange={handleChange}
-              value={formData.university_id}
-              disabled={loadingData || !!searchParams.get('college')}
-            >
-              <option value="">{loadingData ? "Loading..." : "-- Select College --"}</option>
-              {universities.map(uni => (
-                  <option key={uni.id} value={uni.id}>{uni.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block font-medium">Select Course</label>
-            <select
-              name="course_id"
-              required
-              className="w-full border p-2 rounded mt-1 bg-white"
-              onChange={handleChange}
-              value={formData.course_id}
-              disabled={loadingData}
-            >
-              <option value="">{loadingData ? "Loading..." : "-- Select Course --"}</option>
-              {courses.map(course => (
-                  <option key={course.id} value={course.id}>{course.name}</option>
-              ))}
-            </select>
-          </div>
+
+          {/* --- MODIFIED: Conditionally render course selection --- */}
+          {certificationCourse ? (
+            <div>
+              <label className="block font-medium text-gray-500">Applying for Certification Course</label>
+              <input type="text" value={certificationCourse.name} readOnly className="w-full border p-2 rounded mt-1 bg-gray-100 cursor-not-allowed" />
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block font-medium">Select College</label>
+                <select
+                  name="university_id"
+                  className="w-full border p-2 rounded mt-1 bg-white"
+                  onChange={handleChange}
+                  value={formData.university_id}
+                  disabled={loadingData || !!searchParams.get('college')}
+                >
+                  <option value="">{loadingData ? "Loading..." : "-- Select College --"}</option>
+                  {universities.map(uni => (
+                      <option key={uni.id} value={uni.id}>{uni.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-medium">Select Course</label>
+                <select
+                  name="course_id"
+                  className="w-full border p-2 rounded mt-1 bg-white"
+                  onChange={handleChange}
+                  value={formData.course_id}
+                  disabled={loadingData}
+                >
+                  <option value="">{loadingData ? "Loading..." : "-- Select Course --"}</option>
+                  {courses.map(course => (
+                      <option key={course.id} value={course.id}>{course.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          {errorMsg && <p className="text-red-500 text-sm">{errorMsg}</p>}
+
           <button
             type="submit"
             disabled={loadingData}

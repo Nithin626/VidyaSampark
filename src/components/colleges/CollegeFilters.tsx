@@ -34,7 +34,6 @@ const Checkbox: React.FC<{ id: string; label: string; checked: boolean; onChange
   </label>
 );
 
-// in src/components/colleges/CollegeFilters.tsx
 
 const CollegeFilters: React.FC<CollegeFiltersProps> = ({
   streams,

@@ -2,7 +2,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Logo from "@/components/Layout/Header/Logo";
 import { useState } from "react";
@@ -10,7 +9,6 @@ import Loader from "@/components/Common/Loader";
 import { supabase } from "@/utils/supabaseClient";
 
 const SignUp = ({ onClose }: { onClose: () => void }) => {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: any) => {
@@ -22,53 +20,30 @@ const SignUp = ({ onClose }: { onClose: () => void }) => {
     const email = form.get("email") as string;
     const password = form.get("password") as string;
     const current_class = form.get("current_class") as string;
-    // --- 1. Get the phone number from the form ---
     const phone = form.get("phone") as string;
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    // --- MODIFIED: Pass all data securely in the options object ---
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name },
+        data: { 
+          name,
+          current_class,
+          phone: `+91${phone}` // Add the prefix here
+        },
       },
     });
 
-    if (signUpError) {
-      toast.error(signUpError.message);
-      setLoading(false);
-      return;
-    }
-
-    const user = data.user;
-
-    if (!user) {
-      toast.error("Signup succeeded, but no user returned.");
-      setLoading(false);
-      return;
-    }
-
-    // --- 2. Insert the new phone number into the user_profiles table ---
-    const { error: profileError } = await supabase
-      .from("user_profiles")
-      .insert([
-        {
-          id: user.id,
-          email,
-          name,
-          current_class,
-          phone: `+91${phone}`, // Add the prefix here
-        },
-      ]);
-
-    if (profileError) {
-      console.error("Insert profile error:", profileError.message);
-      toast.error(`Profile creation failed: ${profileError.message}`);
-    } else {
-      toast.success("Signup successful. Check your email.");
-      onClose();
-    }
 
     setLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Signup successful! Please check your email to verify your account.");
+      onClose();
+    }
   };
 
   return (
@@ -97,7 +72,6 @@ const SignUp = ({ onClose }: { onClose: () => void }) => {
           />
         </div>
         
-        {/* --- 3. Add the phone number input field to the form --- */}
         <div className="mb-4">
             <div className="flex items-center rounded-md border border-black/20 border-solid focus-within:border-primary">
                 <span className="px-3 text-grey">+91</span>
@@ -106,7 +80,7 @@ const SignUp = ({ onClose }: { onClose: () => void }) => {
                     placeholder="Phone Number"
                     name="phone"
                     required
-                    pattern="[0-9]{10}" // Simple validation for 10 digits
+                    pattern="[0-9]{10}"
                     title="Please enter a valid 10-digit phone number"
                     className="w-full bg-transparent py-3 text-base text-dark outline-none transition placeholder:text-grey"
                 />
@@ -140,7 +114,8 @@ const SignUp = ({ onClose }: { onClose: () => void }) => {
         <div className="mb-6">
           <button
             type="submit"
-            className="flex w-full items-center text-18 font-medium justify-center rounded-md bg-primary px-5 py-3 text-darkmode transition duration-300 ease-in-out hover:bg-transparent hover:text-primary border-primary border "
+            disabled={loading}
+            className="flex w-full items-center text-18 font-medium justify-center rounded-md bg-primary px-5 py-3 text-darkmode transition duration-300 ease-in-out hover:bg-transparent hover:text-primary border-primary border disabled:opacity-50"
           >
             Sign Up {loading && <Loader />}
           </button>
@@ -171,7 +146,7 @@ const SignUp = ({ onClose }: { onClose: () => void }) => {
 
       <p className="text-body-secondary text-base">
         Already have an account?
-        <Link href="/" className="pl-2 text-primary hover:underline">
+        <Link href="/" className="pl-2 text-primary hover:underline" onClick={(e) => { e.preventDefault(); onClose(); /* You might want to open the sign-in modal here */}}>
           Sign In
         </Link>
       </p>

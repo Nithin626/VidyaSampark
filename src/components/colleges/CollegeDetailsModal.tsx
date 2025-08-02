@@ -59,7 +59,7 @@ const CollegeDetailsModal: React.FC<CollegeDetailsModalProps> = ({ university, o
             {/* About Section */}
             <div className="mt-8">
                 <h3 className="text-xl font-bold text-gray-800 mb-2">About {university.name}</h3>
-                <div className="prose max-w-none text-gray-700">
+    <div className="prose max-w-none text-gray-700 text-justify whitespace-pre-wrap">
                     <p>{university.about || "More details coming soon."}</p>
                 </div>
             </div>

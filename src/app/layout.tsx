@@ -22,27 +22,42 @@ async function getMegaMenuData(): Promise<MegaMenuData> {
     { data: streams, error: streamsError },
     { data: courses, error: coursesError },
     { data: universities, error: universitiesError },
-    { data: universityCourses, error: ucError }
+    { data: universityCourses, error: ucError },
+    // --- ADD THESE TWO FETCHES ---
+    { data: certificationCategories, error: certCategoriesError },
+    { data: certificationCourses, error: certCoursesError }
   ] = await Promise.all([
-    supabase.from("streams").select("id, name"),
-    supabase.from("courses").select("id, name, stream_id"), // This fetch is correct for the menu
-    supabase.from("universities").select("id, name"),     // This fetch is correct for the menu
-    supabase.from("university_courses").select("university_id, course_id")
+    supabase.from("streams").select("id, name").order('name', { ascending: true }),
+    supabase.from("courses").select("id, name, stream_id").order('name', { ascending: true }),
+    supabase.from("universities").select("id, name").order('name', { ascending: true }),
+    supabase.from("university_courses").select("university_id, course_id"), // No name column to sort by
+    supabase.from("certification_categories").select("id, name").order('name', { ascending: true }),
+    supabase.from("certification_courses").select("id, name, category_id").order('name', { ascending: true })
   ]);
 
-  if (streamsError || coursesError || universitiesError || ucError) {
-    console.error("Failed to fetch mega menu data:", { streamsError, coursesError, universitiesError, ucError });
-    return { streams: [], courses: [], universities: [], universityCourses: [] };
+  if (streamsError || coursesError || universitiesError || ucError || certCategoriesError || certCoursesError) {
+    console.error("Failed to fetch mega menu data:", { streamsError, coursesError, universitiesError, ucError, certCategoriesError, certCoursesError });
+    // Return a default empty state for all fields
+    return { 
+      streams: [], 
+      courses: [], 
+      universities: [], 
+      universityCourses: [],
+      certificationCategories: [],
+      certificationCourses: []
+    };
   }
 
   return {
     streams: streams || [],
     courses: courses || [],
     universities: universities || [],
-    universityCourses: universityCourses || []
+    universityCourses: universityCourses || [],
+    // --- ADD THE NEW DATA TO THE RETURN OBJECT ---
+    certificationCategories: certificationCategories || [],
+    certificationCourses: certificationCourses || []
   };
 }
-
 export default async function RootLayout({ children }: { children: React.ReactNode; }) {
   const menuData = await getMegaMenuData();
 

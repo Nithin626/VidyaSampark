@@ -56,3 +56,48 @@ export interface HeaderItem {
   label: string;
   href: string;
 }
+// in src/types/menu.ts
+
+export interface HeaderItem { 
+  label: string;
+  href: string;
+  submenu?: { label: string; href: string; }[]; // <-- ADD THIS LINE
+}
+// src/types/menu.ts
+
+// ... (keep all your existing types)
+
+// --- ADD THESE NEW TYPES FOR THE CERTIFICATIONS MEGA MENU ---
+export interface CertificationCategory {
+  id: string;
+  name: string;
+}
+
+export interface MenuCertificationCourse {
+  id: string;
+  name: string;
+  category_id: string | null;
+}
+
+// And add the new types to the main MegaMenuData interface
+export interface MegaMenuData {
+  streams: Stream[];
+  courses: MenuCourse[];
+  universities: MenuUniversity[];
+  universityCourses: UniversityCourse[];
+  // --- ADD THESE TWO LINES ---
+  certificationCategories: CertificationCategory[];
+  certificationCourses: MenuCertificationCourse[];
+}
+// src/types/menu.ts
+
+// ... (keep all your existing types)
+
+// --- ADD THIS NEW TYPE FOR THE CERTIFICATION PAGES ---
+export interface CertificationCourse {
+  id: string;
+  name: string;
+  category_id: string | null;
+  overview: string | null;
+  duration: string | null;
+}

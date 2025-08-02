@@ -23,7 +23,7 @@ const footer = () => {
               </Link>
 
               <Link
-                href="#"
+                href="https://www.instagram.com/vidyasamparkedu/"
                 className="hover:text-primary text-black text-3xl"
                 target="_blank"
                 rel="noopener noreferrer"

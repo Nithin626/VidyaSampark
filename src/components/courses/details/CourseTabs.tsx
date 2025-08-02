@@ -23,11 +23,16 @@ export default function CourseTabs({ course, colleges }: { course: Course, colle
     { id: 'jobs', label: 'Jobs' },         // Disabled for now
   ];
 
+// in src/components/courses/details/CourseTabs.tsx
+
   return (
     <div>
       {/* Tab Buttons */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+        {/* --- THIS IS THE FIX --- */}
+        {/* Add overflow-x-auto to enable horizontal scrolling on small screens */}
+        {/* Add scrollbar-hide for a cleaner look (requires tailwind-scrollbar-hide plugin if you have it, otherwise it's safe to ignore) */}
+        <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -49,7 +54,6 @@ export default function CourseTabs({ course, colleges }: { course: Course, colle
       <div className="mt-4">
         {activeTab === 'overview' && <OverviewTab course={course} />}
         {activeTab === 'colleges' && <CollegesTab colleges={colleges} />}
-        {/* Add the new components to the conditional rendering */}
         {activeTab === 'syllabus' && <SyllabusTab course={course} />}
         {activeTab === 'jobs' && <JobsTab course={course} />}
       </div>

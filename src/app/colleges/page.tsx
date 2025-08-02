@@ -13,8 +13,8 @@ async function getCollegePageData() {
         { data: courses },
         { data: universityCourses }
     ] = await Promise.all([
-        supabase.from('universities').select('*'),
-        supabase.from('streams').select('*'),
+        supabase.from('universities').select('*').order('name', { ascending: true }),
+        supabase.from('streams').select('*').order('name', { ascending: true }),
         supabase.from('courses').select('id, stream_id'),
         supabase.from('university_courses').select('university_id, course_id')
     ]);
