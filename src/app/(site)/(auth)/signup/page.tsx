@@ -1,22 +1,17 @@
+
+'use client'; 
+
 import SignUp from "@/components/Auth/SignUp";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 import { Metadata } from "next";
+export default function SignUpPage() {
+  const handleClose = () => {}; 
 
-export const metadata: Metadata = {
-  title:
-    "Sign Up | Property",
-};
-
-const SignupPage = () => {
   return (
     <>
       <Breadcrumb pageName="Sign Up Page" />
-
-      <SignUp onClose={function (): void {
-        throw new Error("Function not implemented.");
-      } } />
+      {/* required onClose prop */}
+      <SignUp onClose={handleClose} /> 
     </>
   );
 };
-
-export default SignupPage;

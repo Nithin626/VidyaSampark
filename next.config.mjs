@@ -8,6 +8,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // --- ADDED THIS LINE ---
+  staticPageGenerationTimeout: 120,
 };
 
 export default nextConfig;
