@@ -8,6 +8,9 @@ import ClientLayoutWrapper from "@/components/Layout/ClientLayoutWrapper";
 import { supabase } from "@/utils/supabaseClient";
 import { MegaMenuData } from "@/types/menu";
 import { UIProvider } from '@/context/UIContext'; // Import the provider
+// --- ADD THIS LINE ---
+// This tells Next.js to always render this layout dynamically, preventing stale data.
+export const dynamic = 'force-dynamic';
 
 const font = Poppins({
   subsets: ["latin"],

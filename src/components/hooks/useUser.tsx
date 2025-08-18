@@ -1,3 +1,5 @@
+//src\components\hooks\useUser.tsx
+
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";

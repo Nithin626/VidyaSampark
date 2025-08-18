@@ -2,10 +2,10 @@
 import { supabaseAdmin } from "@/utils/supabaseAdmin";
 import EnquiryList, { Enquiry } from "./EnquiryList";
 
-// This tells Next.js to always fetch fresh data for this page
+// This tells Next.js to always fetch fresh data and never cache this page.
 export const dynamic = "force-dynamic";
 
-// Define simpler types for our raw data fetches (no change here)
+// Define simpler types for our raw data fetches
 interface RawEnquiry {
   id: string;
   name: string;
@@ -24,12 +24,13 @@ interface SimpleUniversity { id: string; name: string; }
 async function getEnquiries(): Promise<Enquiry[]> {
   // 1. Fetch all the raw data in parallel USING THE ADMIN CLIENT
   const [enquiriesRes, coursesRes, universitiesRes] = await Promise.all([
-    supabaseAdmin.from("enquiries").select("*"),       // <--- Use supabaseAdmin
-    supabaseAdmin.from("courses").select("id, name"),    // <--- Use supabaseAdmin
-    supabaseAdmin.from("universities").select("id, name") // <--- Use supabaseAdmin
+    // THE FIX: This query now correctly filters to only include records
+    // where 'certification_course_id' is NULL, meaning it's a regular enquiry.
+    supabaseAdmin.from("enquiries").select("*").is('certification_course_id', null),
+    supabaseAdmin.from("courses").select("id, name"),
+    supabaseAdmin.from("universities").select("id, name")
   ]);
 
-  // The rest of the function remains the same...
   if (enquiriesRes.error || coursesRes.error || universitiesRes.error) {
     console.error("Error fetching data:", {
       enquiriesError: enquiriesRes.error,
@@ -46,6 +47,7 @@ async function getEnquiries(): Promise<Enquiry[]> {
   const courseMap = new Map(courses.map(c => [c.id, c.name]));
   const universityMap = new Map(universities.map(u => [u.id, u.name]));
 
+  // 2. Join the data together in code
   const joinedEnquiries: Enquiry[] = rawEnquiries.map(enquiry => {
     return {
       ...enquiry,
@@ -62,6 +64,7 @@ export default async function StudentsPage() {
 
   return (
     <div className="p-4">
+      <h1 className="text-xl font-bold mb-4">Student Enquiries</h1>
       <EnquiryList enquiries={enquiries} />
     </div>
   );

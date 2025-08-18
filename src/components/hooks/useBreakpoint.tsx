@@ -1,4 +1,5 @@
 // src/components/hooks/useBreakpoint.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -37,3 +38,4 @@ export const useBreakpoint = (): Breakpoint => {
 
   return breakpoint;
 };
+
